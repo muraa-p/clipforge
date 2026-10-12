@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+backend/.venv/
+backend/data/
+backend/bin/
+.venv/
+
+# Node / Next
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+npm-debug.log*
+frontend/.vercel/
+frontend/*.tsbuildinfo
+
+# Deploy / secrets
+.env
+.vercel/
+*.env.local
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log

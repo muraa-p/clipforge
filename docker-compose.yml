@@ -1,0 +1,31 @@
+# Run the ClipForge engine anywhere that stays on (free cloud VM, home server,
+# NAS, Raspberry Pi...). The web UI runs on Vercel (or locally) and points at
+# http://<this-host>:8000 from its in-app Settings panel.
+#
+#   cp .env.example .env      # then edit .env (set a strong token)
+#   docker compose up -d --build
+#
+services:
+  engine:
+    build: ./backend
+    image: clipforge-engine
+    ports:
+      - "${CLIPFORGE_PORT:-8000}:8000"
+    # Compose auto-loads ./.env for the ${...} substitutions below.
+    environment:
+      # Set a shared secret to stop strangers from using your engine.
+      CLIPFORGE_ACCESS_TOKEN: ${CLIPFORGE_ACCESS_TOKEN:-}
+      # Public-safety limits (see README).
+      CLIPFORGE_MAX_CONCURRENT_JOBS: ${CLIPFORGE_MAX_CONCURRENT_JOBS:-2}
+      CLIPFORGE_MAX_QUEUED_JOBS: ${CLIPFORGE_MAX_QUEUED_JOBS:-8}
+      CLIPFORGE_DATA_TTL_HOURS: ${CLIPFORGE_DATA_TTL_HOURS:-24}
+      # Optional: a free AI key for smarter highlight picking (leave blank to
+      # use the built-in offline heuristics only).
+      CLIPFORGE_LLM_PROVIDER: ${CLIPFORGE_LLM_PROVIDER:-}
+      CLIPFORGE_LLM_API_KEY: ${CLIPFORGE_LLM_API_KEY:-}
+    volumes:
+      - clipforge-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  clipforge-data:

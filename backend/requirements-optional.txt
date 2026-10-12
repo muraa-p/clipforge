@@ -1,0 +1,7 @@
+# Optional: local transcription fallback when a video has no captions.
+# Heavier install; runs on CPU. Remove if you're happy with captions-only.
+faster-whisper>=1.0.3
+
+# Optional: bundled FFmpeg binary as an extra fallback if you can't use
+# the auto-downloaded static build.
+imageio-ffmpeg>=0.5.1

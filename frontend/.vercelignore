@@ -1,0 +1,10 @@
+# Keep Vercel uploads small and clean. The CLI also honours .gitignore, but this
+# makes the intent explicit.
+node_modules
+.next
+out
+.vercel
+*.tsbuildinfo
+npm-debug.log*
+.env
+.env.local

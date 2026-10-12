@@ -1,0 +1,31 @@
+#cloud-config
+# ---------------------------------------------------------------------------
+# ClipForge engine — cloud-init for a fresh Ubuntu VM (Oracle Always Free,
+# Google Cloud free e2-micro, DigitalOcean, Hetzner, ...).
+#
+# Paste this into the "user data" / "cloud-init" box when creating the VM,
+# after replacing REPO_URL below. On first boot it installs Docker, clones the
+# repo, generates an access token and starts the engine on port 8000.
+#
+# Find your token afterwards with:  sudo cat /opt/clipforge/.env
+# ---------------------------------------------------------------------------
+package_update: true
+packages:
+  - git
+  - ca-certificates
+
+write_files:
+  - path: /opt/clipforge-bootstrap.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      export CLIPFORGE_REPO_URL="REPO_URL"
+      export CLIPFORGE_DIR="/opt/clipforge"
+      curl -fsSL "https://raw.githubusercontent.com/REPO_OWNER/REPO_NAME/main/clipforge/scripts/deploy-engine.sh" -o /tmp/deploy-engine.sh
+      bash /tmp/deploy-engine.sh
+
+runcmd:
+  - [ bash, /opt/clipforge-bootstrap.sh ]
+
+final_message: "ClipForge engine bootstrap finished — see /opt/clipforge/.env for the access token."
