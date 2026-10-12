@@ -2,25 +2,27 @@
 # ---------------------------------------------------------------------------
 # ClipForge engine — one-command installer for an always-on Linux box.
 #
+# ClipForge is at https://github.com/muraa-p/clipforge
 # Run this ON the machine that will host the engine (free VM, home server, NAS).
 # It installs Docker if needed, fetches the source, generates a strong access
 # token, and starts the engine in the background with auto-restart.
 #
-#   curl -fsSL https://raw.githubusercontent.com/<you>/<repo>/main/clipforge/scripts/deploy-engine.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/muraa-p/clipforge/main/scripts/deploy-engine.sh | bash
 #
-# Or, if you already cloned the repo, from the clipforge/ folder:
+# Or, if you already cloned the repo, from its root:
 #   bash scripts/deploy-engine.sh
 #
 # Overridable via env:
 #   CLIPFORGE_REPO_URL  (used only when the source isn't already present)
+#   CLIPFORGE_SUBDIR    subfolder holding docker-compose.yml (default "")
 #   CLIPFORGE_DIR       where to put the source        (default ~/clipforge)
 #   CLIPFORGE_PORT      host port                      (default 8000)
 #   CLIPFORGE_ACCESS_TOKEN  pre-set a token instead of generating one
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
-REPO_URL="${CLIPFORGE_REPO_URL:-https://github.com/muraa-p/My-portifolio.git}"
-SUBDIR="${CLIPFORGE_SUBDIR:-clipforge}"
+REPO_URL="${CLIPFORGE_REPO_URL:-https://github.com/muraa-p/clipforge.git}"
+SUBDIR="${CLIPFORGE_SUBDIR:-}"
 DEST="${CLIPFORGE_DIR:-$HOME/clipforge}"
 PORT="${CLIPFORGE_PORT:-8000}"
 
@@ -58,7 +60,7 @@ if [ ! -f "./docker-compose.yml" ] || [ ! -d "./backend/app" ]; then
     rm -rf "$DEST"
     git clone --depth 1 "$REPO_URL" "$DEST"
   fi
-  cd "$DEST/$SUBDIR"
+  cd "$DEST/${SUBDIR:-.}"
 fi
 
 say "Writing .env"

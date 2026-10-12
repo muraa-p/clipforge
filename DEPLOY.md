@@ -1,5 +1,7 @@
 # 🚀 Deploying ClipForge (free, always-on)
 
+> Source: **https://github.com/muraa-p/clipforge**
+
 ClipForge is two pieces, and only one of them needs a machine that stays on:
 
 | Piece | What it does | Where it lives | Always on? |
@@ -34,7 +36,7 @@ Everything below is **free**. You only need an account on whichever host you pic
 
 ### Option A — CLI (no Git needed)
 
-From `clipforge/frontend`:
+From the `frontend` folder (repo root for the dedicated repo):
 
 ```bash
 vercel login                 # once
@@ -47,7 +49,9 @@ Vercel prints your production URL (e.g. `https://clipforge.vercel.app`).
 
 1. Push this repo to GitHub.
 2. In Vercel → **Add New → Project** → import the repo.
-3. Set **Root Directory** to `clipforge/frontend` (Next.js is auto-detected).
+3. Set **Root Directory** to `frontend` (this repo's layout — use
+   `clipforge/frontend` if you kept ClipForge inside another repo). Next.js is
+   auto-detected.
 4. **Deploy**. No environment variables are required.
 
 Either way the UI is a static app that reads its engine address from the
@@ -65,8 +69,7 @@ browser, so you never redeploy it to point at a new engine.
    (Ampere ARM, up to 4 OCPU / 24 GB — all free).
 3. Under **Add SSH keys**, let Oracle generate a key pair and download it.
 4. Expand **Show advanced options → Management → Cloud-init / user data** and
-   paste the contents of [`scripts/cloud-init.yaml`](scripts/cloud-init.yaml)
-   after replacing `REPO_URL`, `REPO_OWNER`, `REPO_NAME`.
+   paste the whole contents of [`scripts/cloud-init.yaml`](scripts/cloud-init.yaml).
 5. Create it. Add an **ingress rule**: source `0.0.0.0/0`, TCP port **8000**.
 6. Wait ~3 minutes, then find your token:
 
@@ -79,9 +82,9 @@ browser, so you never redeploy it to point at a new engine.
 Prefer to do it by hand instead of cloud-init? SSH in and run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/clipforge/scripts/deploy-engine.sh | bash
-# or, from an existing clone:
-bash clipforge/scripts/deploy-engine.sh
+curl -fsSL https://raw.githubusercontent.com/muraa-p/clipforge/main/scripts/deploy-engine.sh | bash
+# or, from an existing clone (repo root):
+bash scripts/deploy-engine.sh
 ```
 
 The script installs Docker, clones the source, generates a strong token, writes
@@ -116,9 +119,11 @@ terms before relying on it.
 
 ### Option D — any Docker host you own
 
-From the `clipforge/` folder (on a home server, NAS, Raspberry Pi, …):
+On a home server, NAS or Raspberry Pi:
 
 ```bash
+git clone https://github.com/muraa-p/clipforge.git
+cd clipforge
 cp .env.example .env          # set CLIPFORGE_ACCESS_TOKEN
 docker compose up -d --build
 ```

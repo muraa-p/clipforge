@@ -134,7 +134,8 @@ ClipForge splits in two:
 ### 1. Deploy the UI to Vercel (free)
 
 1. Import this repo on Vercel.
-2. Set **Root Directory** to `clipforge/frontend` (framework auto-detects Next.js).
+2. Set **Root Directory** to `frontend` (or `clipforge/frontend` if ClipForge
+   lives inside another repo). Next.js is auto-detected.
 3. Deploy. No env vars needed.
 
 Open the deployed URL, click **⚙ Settings**, and set your **Backend URL** (and

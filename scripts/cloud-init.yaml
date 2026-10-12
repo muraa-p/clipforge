@@ -3,11 +3,12 @@
 # ClipForge engine — cloud-init for a fresh Ubuntu VM (Oracle Always Free,
 # Google Cloud free e2-micro, DigitalOcean, Hetzner, ...).
 #
-# Paste this into the "user data" / "cloud-init" box when creating the VM,
-# after replacing REPO_URL below. On first boot it installs Docker, clones the
-# repo, generates an access token and starts the engine on port 8000.
+# Paste this whole file into the "user data" / "cloud-init" box when creating
+# the VM. On first boot it installs Docker, clones the repo, generates an access
+# token and starts the engine on port 8000.
 #
-# Find your token afterwards with:  sudo cat /opt/clipforge/.env
+# Find your token afterwards:  sudo cat /opt/clipforge/.env
+# (Change REPO_URL / the raw URL below if you are deploying a fork.)
 # ---------------------------------------------------------------------------
 package_update: true
 packages:
@@ -20,12 +21,12 @@ write_files:
     content: |
       #!/usr/bin/env bash
       set -euo pipefail
-      export CLIPFORGE_REPO_URL="REPO_URL"
+      export CLIPFORGE_REPO_URL="https://github.com/muraa-p/clipforge.git"
       export CLIPFORGE_DIR="/opt/clipforge"
-      curl -fsSL "https://raw.githubusercontent.com/REPO_OWNER/REPO_NAME/main/clipforge/scripts/deploy-engine.sh" -o /tmp/deploy-engine.sh
+      curl -fsSL "https://raw.githubusercontent.com/muraa-p/clipforge/main/scripts/deploy-engine.sh" -o /tmp/deploy-engine.sh
       bash /tmp/deploy-engine.sh
 
 runcmd:
   - [ bash, /opt/clipforge-bootstrap.sh ]
 
-final_message: "ClipForge engine bootstrap finished — see /opt/clipforge/.env for the access token."
+final_message: "ClipForge engine bootstrap finished — run: sudo cat /opt/clipforge/.env"
