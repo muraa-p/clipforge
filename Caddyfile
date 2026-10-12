@@ -1,0 +1,21 @@
+# Optional HTTPS reverse proxy for the ClipForge engine.
+#
+# The Vercel UI is served over HTTPS, and browsers block an HTTPS page from
+# calling a plain http:// engine (mixed content). Caddy fixes that by giving the
+# engine a real certificate for free.
+#
+# You do NOT need to own a domain: sslip.io maps "<ip>.sslip.io" straight to the
+# IP, so Caddy can get a Let's Encrypt cert for your VM's address.
+#
+# 1. In .env set:   CLIPFORGE_DOMAIN=203.0.113.7.sslip.io
+#    (replace with your VM's public IPv4 followed by .sslip.io)
+# 2. Open inbound TCP 80 and 443 in your cloud firewall / security list.
+# 3. docker compose --profile https up -d --build
+# 4. Point the web UI at  https://203.0.113.7.sslip.io
+#
+# Tip: as a comment line, put your email before the site block to get expiry
+# notices:  { email you@example.com }
+{$CLIPFORGE_DOMAIN:localhost} {
+	encode zstd gzip
+	reverse_proxy engine:8000
+}

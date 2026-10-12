@@ -1,9 +1,10 @@
 # Run the ClipForge engine anywhere that stays on (free cloud VM, home server,
 # NAS, Raspberry Pi...). The web UI runs on Vercel (or locally) and points at
-# http://<this-host>:8000 from its in-app Settings panel.
+# this engine from its in-app Settings panel.
 #
 #   cp .env.example .env      # then edit .env (set a strong token)
-#   docker compose up -d --build
+#   docker compose up -d --build                 # engine only (http://ip:8000)
+#   docker compose --profile https up -d --build # + HTTPS via Caddy (see Caddyfile)
 #
 services:
   engine:
@@ -27,5 +28,25 @@ services:
       - clipforge-data:/app/data
     restart: unless-stopped
 
+  # Optional free HTTPS front door (mixed-content fix). Enable with:
+  #   docker compose --profile https up -d
+  caddy:
+    image: caddy:2
+    profiles: ["https"]
+    depends_on:
+      - engine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CLIPFORGE_DOMAIN: ${CLIPFORGE_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
 volumes:
   clipforge-data:
+  caddy-data:
+  caddy-config:

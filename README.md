@@ -158,12 +158,19 @@ Paste that URL into the UI's **Backend URL**, and the same secret into
 **Option B — always on, laptop off** (Docker on a free-tier VM / home server):
 
 ```bash
-# from the clipforge/ folder; put CLIPFORGE_ACCESS_TOKEN=... in a .env file
-docker compose up -d
+# one command: installs Docker, adds a free HTTPS front door, makes a token
+curl -fsSL https://raw.githubusercontent.com/muraa-p/clipforge/main/scripts/deploy-engine.sh | bash
 ```
 
-Then set **Backend URL** to `http://<host>:8000` (or front it with a tunnel /
-HTTPS). The engine can also read a free AI key from env (see above).
+It prints an `https://<your-ip>.sslip.io` engine URL and an access token — put
+both into the UI's **⚙ Settings**. Prefer manual control? From the repo root:
+
+```bash
+cp .env.example .env      # set CLIPFORGE_ACCESS_TOKEN (+ CLIPFORGE_DOMAIN)
+docker compose --profile https up -d --build
+```
+
+Full walkthrough (Oracle Always Free, GCP free tier, HF Spaces): [`DEPLOY.md`](DEPLOY.md).
 
 ### Security
 
@@ -210,7 +217,8 @@ clipforge/
 │  ├─ lib/settings.ts     # browser-local engine URL / token / AI key (BYOK)
 │  ├─ lib/api.ts, providers.ts, types.ts
 │  └─ vercel.json, .env.example
-├─ docker-compose.yml     # one-command engine
+├─ docker-compose.yml     # one-command engine (+ optional HTTPS via Caddy)
+├─ Caddyfile              # free HTTPS front door (auto Let's Encrypt)
 ├─ DEPLOY.md              # free always-on deploy guide (Vercel + VM)
 ├─ LICENSE                # MIT
 └─ scripts/               # setup, run, tunnel + deploy helpers

@@ -70,13 +70,16 @@ browser, so you never redeploy it to point at a new engine.
 3. Under **Add SSH keys**, let Oracle generate a key pair and download it.
 4. Expand **Show advanced options → Management → Cloud-init / user data** and
    paste the whole contents of [`scripts/cloud-init.yaml`](scripts/cloud-init.yaml).
-5. Create it. Add an **ingress rule**: source `0.0.0.0/0`, TCP port **8000**.
-6. Wait ~3 minutes, then find your token:
+5. Create it. In the VCN's **Security List**, add ingress rules from
+   `0.0.0.0/0` for TCP ports **80**, **443** and **8000**.
+6. Wait ~3 minutes. The bootstrap prints your token and URLs to the boot log;
+   over SSH you can check them:
 
    ```bash
    ssh -i <key> ubuntu@<public-ip>
    sudo cat /opt/clipforge/.env        # shows CLIPFORGE_ACCESS_TOKEN
-   curl http://<public-ip>:8000/api/health
+   # the script also prints an https://<public-ip>.sslip.io URL — use that one
+   curl https://<public-ip>.sslip.io/api/health
    ```
 
 Prefer to do it by hand instead of cloud-init? SSH in and run:
@@ -88,7 +91,9 @@ bash scripts/deploy-engine.sh
 ```
 
 The script installs Docker, clones the source, generates a strong token, writes
-`.env`, and starts the engine with `restart: unless-stopped`.
+`.env`, and starts the engine with `restart: unless-stopped`. It also stands up a
+**free HTTPS front door** (Caddy + a Let's Encrypt cert for
+`<your-ip>.sslip.io`) so the HTTPS Vercel UI can call it — no domain required.
 
 ### Option B — Google Cloud free `e2-micro`
 
@@ -148,7 +153,9 @@ $env:CLIPFORGE_ACCESS_TOKEN = "some-long-random-secret"
 
 1. Open your Vercel URL.
 2. Click **⚙ Settings**.
-3. **Engine URL** → `http://<engine-ip>:8000` (or your HTTPS/tunnel URL).
+3. **Engine URL** → your engine address. Use the **`https://…`** URL the deploy
+   script printed (e.g. `https://203.0.113.7.sslip.io`) — an `https` page can't
+   call a plain `http://` engine.
 4. **Access token** → the `CLIPFORGE_ACCESS_TOKEN` from step 2.
 5. (Optional) **AI highlight picking** → paste a free key (Groq/Gemini/…).
 
@@ -157,10 +164,16 @@ leave your device except to talk to your own engine.
 
 ---
 
-## 4. Optional: HTTPS instead of `http://ip:8000`
+## 4. HTTPS (already handled — plus alternatives)
 
-Vercel serves the UI over HTTPS; browsers block mixed content when a page calls
-an `http://` API, and some providers reject `http://` origins. Easiest fixes:
+The Vercel UI is served over HTTPS, and browsers block an HTTPS page from calling
+a plain `http://` engine ("mixed content"). `scripts/deploy-engine.sh` **sets this
+up for you**: it starts a [Caddy](https://caddyserver.com) reverse proxy that
+obtains a free Let's Encrypt certificate for `<your-ip>.sslip.io` (a wildcard DNS
+service — you don't need to own a domain). Just open inbound TCP **80** and
+**443**, then use the `https://<your-ip>.sslip.io` URL.
+
+Other ways to get HTTPS, if you prefer:
 
 - **Cloudflare Tunnel** on the engine box:
   ```bash

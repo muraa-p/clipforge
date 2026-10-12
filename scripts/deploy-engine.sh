@@ -17,6 +17,7 @@
 #   CLIPFORGE_SUBDIR    subfolder holding docker-compose.yml (default "")
 #   CLIPFORGE_DIR       where to put the source        (default ~/clipforge)
 #   CLIPFORGE_PORT      host port                      (default 8000)
+#   CLIPFORGE_DOMAIN    HTTPS hostname (default: <your-ip>.sslip.io, free cert)
 #   CLIPFORGE_ACCESS_TOKEN  pre-set a token instead of generating one
 # ---------------------------------------------------------------------------
 set -euo pipefail
@@ -63,6 +64,13 @@ if [ ! -f "./docker-compose.yml" ] || [ ! -d "./backend/app" ]; then
   cd "$DEST/${SUBDIR:-.}"
 fi
 
+# --- Work out our address so we can offer free HTTPS (ssl.io reverse proxy) ---
+PUBLIC_IP="$(curl -fsS --max-time 8 https://api.ipify.org 2>/dev/null || true)"
+DOMAIN="${CLIPFORGE_DOMAIN:-}"
+if [ -z "$DOMAIN" ] && printf '%s' "$PUBLIC_IP" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+  DOMAIN="${PUBLIC_IP}.sslip.io"
+fi
+
 say "Writing .env"
 TOKEN="${CLIPFORGE_ACCESS_TOKEN:-}"
 if [ -z "$TOKEN" ]; then
@@ -74,28 +82,44 @@ CLIPFORGE_PORT=$PORT
 CLIPFORGE_MAX_CONCURRENT_JOBS=2
 CLIPFORGE_MAX_QUEUED_JOBS=8
 CLIPFORGE_DATA_TTL_HOURS=24
+CLIPFORGE_DOMAIN=$DOMAIN
 EOF
 
 say "Building + starting the engine"
-$COMPOSE up -d --build
+HTTPS_DOMAIN=""
+if [ -n "$DOMAIN" ] && $COMPOSE --profile https up -d --build; then
+  HTTPS_DOMAIN="$DOMAIN"
+else
+  say "Starting over plain HTTP (HTTPS front door not enabled)"
+  $COMPOSE up -d --build
+fi
 
-IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
-PUBLIC_IP="$(curl -fsS --max-time 5 https://api.ipify.org 2>/dev/null || echo '<your-public-ip>')"
+LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 
 cat <<EOF
 
 ──────────────────────────────────────────────────────────────
 ✅ ClipForge engine is running.
 
-  Engine URL      : http://$PUBLIC_IP:$PORT      (local: http://$IP:$PORT)
   Access token    : $TOKEN
+EOF
 
-  Put BOTH of those into the web UI →  ⚙ Settings.
+if [ -n "$HTTPS_DOMAIN" ]; then
+  cat <<EOF
+  Engine URL      : https://$HTTPS_DOMAIN      ← put THIS in the web UI
 
-  • Open TCP port $PORT in your cloud firewall / security list.
-  • Health check   : http://$PUBLIC_IP:$PORT/api/health
-  • Logs           : docker compose logs -f
-  • Update         : git pull && docker compose up -d --build
-  • Stop           : docker compose down
+  HTTPS needs inbound TCP 80 + 443 open in your cloud firewall / security
+  list, and the certificate can take 30-60s to be issued on first boot.
+EOF
+fi
+
+cat <<EOF
+  Plain HTTP      : http://${PUBLIC_IP:-<your-ip>}:$PORT${LAN_IP:+   (local: http://$LAN_IP:$PORT)}
+
+  Open TCP $PORT${HTTPS_DOMAIN:+ (plus 80 and 443 for HTTPS)} in your cloud firewall.
+  Health check    : http://${PUBLIC_IP:-<your-ip>}:$PORT/api/health
+  Logs            : docker compose logs -f
+  Update          : git pull && docker compose --profile https up -d --build
+  Stop            : docker compose down
 ──────────────────────────────────────────────────────────────
 EOF
